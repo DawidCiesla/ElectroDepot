@@ -6,8 +6,8 @@ services:
       context: .
       dockerfile: Server/Dockerfile
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - "5000:8080"
+      - "5001:8081"
     depends_on:
       - mssqlserver
     environment:

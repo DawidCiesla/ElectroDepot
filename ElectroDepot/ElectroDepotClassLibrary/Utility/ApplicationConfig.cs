@@ -99,7 +99,7 @@ namespace ElectroDepotClassLibrary.Utility
                 ServerData settings = new ServerData()
                 {
                     IP = "localhost",
-                    Port = "8081"
+                    Port = "5001"
                 };
 
                 string jsonCreate = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
