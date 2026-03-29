@@ -98,7 +98,7 @@ namespace ElectroDepotClassLibrary.Utility
 
                 ServerData settings = new ServerData()
                 {
-                    IP = "localhost",
+                    IP = "100.76.211.104",
                     Port = "5001"
                 };
 

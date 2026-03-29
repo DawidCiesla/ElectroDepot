@@ -4,8 +4,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
     ports:
-      - "5000:8080"
-      - "5001:8081"
+      - "${HOST_BIND:-127.0.0.1}:5000:8080"
+      - "${HOST_BIND:-127.0.0.1}:5001:8081"
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro

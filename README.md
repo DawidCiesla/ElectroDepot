@@ -156,7 +156,7 @@ AppData\Roaming\ElectroDepot\server.json
 ```json
 {
   "IP": "localhost",
-  "Port": "8081"
+   "Port": "5001"
 }
 ```
 5. Update the IP and Port to match the server you are trying to connect to.
@@ -180,11 +180,11 @@ Run ElectroDepot again. If you had any connection issues, they should be resolve
     server:
         image: darekkrawczyk/electrodepot-apiserver:latest
         container_name: "electrodepot-apiserver"
-        ports:
-        - "8080:8080"
-        - "8081:8081"
-        depends_on:
-        - mssqlserver
+      ports:
+      - "${HOST_BIND:-127.0.0.1}:5000:8080"
+      - "${HOST_BIND:-127.0.0.1}:5001:8081"
+      depends_on:
+      - mssqlserver
         environment:
         - ASPNETCORE_ENVIRONMENT=Development
         volumes:
@@ -215,3 +215,12 @@ Run ElectroDepot again. If you had any connection issues, they should be resolve
 #### 3️⃣ Start the Server
 - Open PowerShell in the directory where `docker-compose.yml` is located.
 - Run `docker-compose -p electro-depot-server up --build` command.
+
+#### Restricting access to LAN
+By default the compose file binds the service ports to localhost only. To allow access from your local network (LAN) but not from the public internet, create a `.env` file next to `docker-compose.yml` and set your host LAN IP, for example:
+
+```env
+HOST_BIND=192.168.1.50
+```
+
+When `HOST_BIND` is set, docker will bind the published ports to that specific interface (e.g. `192.168.1.50:5000:8080`) which limits access to machines on your LAN.
