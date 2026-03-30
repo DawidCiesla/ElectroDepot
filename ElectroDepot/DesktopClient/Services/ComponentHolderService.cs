@@ -33,20 +33,29 @@ namespace DesktopClient.Services
 
         private void _componentsStore_ComponentsLoadedHandler()
         {
-            _components.Clear();
-
-            IEnumerable<DetailedComponentContainer> components = _componentsStore.AllComponents;
-
-            IEnumerable<Supplier> suppliers = _suppliersStore.Suppliers;
-            ObservableCollection<SupplierContainer> suppliersCol = new ObservableCollection<SupplierContainer>(suppliers.Select(x => new SupplierContainer(x)));
-
-            foreach(DetailedComponentContainer componentContainer in components)
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
+                try
+                {
+                    _components.Clear();
 
-                _components.AddOrUpdate(new DetailedComponentContainerHolder(_viewModel, componentContainer, suppliersCol));
-            }
+                    IEnumerable<DetailedComponentContainer> components = _componentsStore.AllComponents;
 
-            DataLoaded?.Invoke();
+                    IEnumerable<Supplier> suppliers = _suppliersStore.Suppliers;
+                    ObservableCollection<SupplierContainer> suppliersCol = new ObservableCollection<SupplierContainer>(suppliers.Select(x => new SupplierContainer(x)));
+
+                    foreach (DetailedComponentContainer componentContainer in components)
+                    {
+                        _components.AddOrUpdate(new DetailedComponentContainerHolder(_viewModel, componentContainer, suppliersCol));
+                    }
+
+                    DataLoaded?.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[CRASH MITIGATED] Exception in ComponentHolderService Reload: {ex}");
+                }
+            });
         }
 
         public IObservable<IChangeSet<DetailedComponentContainerHolder, int>> EmployeesConnection() => _components.Connect();

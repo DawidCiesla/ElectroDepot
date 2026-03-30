@@ -353,6 +353,34 @@ namespace Server.Controllers
 
             return NoContent();
         }
+
+        // DELETE: ElectroDepot/Components/DeleteAll
+        [HttpDelete("DeleteAll")]
+        public async Task<IActionResult> DeleteAllComponents()
+        {
+            try
+            {
+                // First, delete dependent entities to respect Foreign Key constraints
+                var projectComponents = await _context.ProjectComponents.ToListAsync();
+                _context.ProjectComponents.RemoveRange(projectComponents);
+
+                var purchaseItems = await _context.PurchaseItems.ToListAsync();
+                _context.PurchaseItems.RemoveRange(purchaseItems);
+
+                var ownsComponents = await _context.OwnsComponent.ToListAsync();
+                _context.OwnsComponent.RemoveRange(ownsComponents);
+
+                var components = await _context.Components.ToListAsync();
+                _context.Components.RemoveRange(components);
+
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Wystąpił błąd po stronie serwera: {ex.Message}");
+            }
+        }
         #endregion
         private bool ComponentExists(int id)
         {

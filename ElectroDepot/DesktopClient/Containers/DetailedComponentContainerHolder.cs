@@ -43,6 +43,13 @@ namespace DesktopClient.Containers
             await _viewModel.NavigateTab(ComponentTab.Edit);
         }
 
+        [RelayCommand]
+        public async Task DeleteComponent()
+        {
+            _viewModel.Components_SelectedComponent = this;
+            await _viewModel.DeleteSelectedComponentCommand.ExecuteAsync(null);
+        }
+
         [RelayCommand(CanExecute = nameof(CanOpenDatasheet))]
         public async Task OpenDatasheet()
         {

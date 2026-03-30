@@ -266,6 +266,13 @@ namespace ElectroDepotClassLibrary.DataProviders
             var response = await HTTPClient.DeleteAsync(url);
             return response.IsSuccessStatusCode;
         }
+
+        public async Task<bool> DeleteAllComponents()
+        {
+            string url = ComponentEndpoints.DeleteAll();
+            var response = await HTTPClient.DeleteAsync(url);
+            return response.IsSuccessStatusCode;
+        }
         #endregion
     }
 }

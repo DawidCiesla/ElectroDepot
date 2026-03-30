@@ -1,0 +1,13 @@
+--- DesktopClient/ViewModels/RootPageViewModel.cs
++++ DesktopClient/ViewModels/RootPageViewModel.cs
+@@ -52,6 +52,10 @@
+             {
+                 destinationViewModel = new UserSettingsPageViewModel(this, DatabaseStore, MsBoxService, _appConfig);
+             }
++            else if (destination == "AIAssistant")
++            {
++                destinationViewModel = new AIAssistantPageViewModel(this, DatabaseStore, MsBoxService, _appConfig);
++            }
+             else
+             {
+                 throw new NotImplementedException();

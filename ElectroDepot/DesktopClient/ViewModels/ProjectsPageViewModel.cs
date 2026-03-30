@@ -1327,7 +1327,7 @@ namespace DesktopClient.ViewModels
 
             _projectsService.LoadData();
             #endregion
-            _defaultImage = ImageConverterUtility.BytesToBitmap(File.ReadAllBytes("D:\\Repo\\ElectronDepot\\ElectroDepot\\DesktopClient\\Assets\\DefaultProjectImage.png"));
+            _defaultImage = ImageHelper.LoadFromResource(new Uri("avares://ElectroDepot/Assets/DefaultProjectImage.png"));
             Add_CurrentAddImage = _defaultImage;
 
             DatabaseStore.CategorieStore.ReloadCategoriesData();
@@ -1471,15 +1471,27 @@ namespace DesktopClient.ViewModels
 
         private async void ComponentStore_ComponentsLoadedHandler()
         {
-            PurchasedComponentsSource.Clear();
-            IEnumerable<OwnsComponent> unusedComponentsFromDB = DatabaseStore.ComponentStore.UnusedComponents;
-            foreach(OwnsComponent component in unusedComponentsFromDB)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                ElectroDepotClassLibrary.Models.Component componentFromDB = DatabaseStore.ComponentStore.Components.FirstOrDefault(x=>x.ID == component.ComponentID);
-                Category categoryFromDB = DatabaseStore.CategorieStore.Categories.FirstOrDefault(x => x.ID == componentFromDB.CategoryID);
-                PurchasedComponentsSource.Add(new PurchaseComponentHolder(this, componentFromDB, component, categoryFromDB));
-            }
-            RefreshPurchasedComponents();
+                try
+                {
+                    PurchasedComponentsSource.Clear();
+                    IEnumerable<OwnsComponent> unusedComponentsFromDB = DatabaseStore.ComponentStore.UnusedComponents;
+                    foreach(OwnsComponent component in unusedComponentsFromDB)
+                    {
+                        ElectroDepotClassLibrary.Models.Component componentFromDB = DatabaseStore.ComponentStore.Components.FirstOrDefault(x=>x.ID == component.ComponentID);
+                        if (componentFromDB == null) continue; // Skip if component was deleted
+                        
+                        Category categoryFromDB = DatabaseStore.CategorieStore.Categories.FirstOrDefault(x => x.ID == componentFromDB.CategoryID);
+                        PurchasedComponentsSource.Add(new PurchaseComponentHolder(this, componentFromDB, component, categoryFromDB));
+                    }
+                    RefreshPurchasedComponents();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[CRASH MITIGATED] Exception in ProjectsPageViewModel.ComponentStore_ComponentsLoadedHandler: {ex}");
+                }
+            });
         }
 
         public void RefreshPurchasedComponents()

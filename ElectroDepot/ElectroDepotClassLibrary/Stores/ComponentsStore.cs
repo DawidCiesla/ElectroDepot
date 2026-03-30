@@ -57,7 +57,7 @@ namespace ElectroDepotClassLibrary.Stores
             return result;
         }
 
-        public async Task<bool> InsertNewComponent(Component component)
+        public async Task<bool> InsertNewComponent(Component component, int initialQuantity = 0)
         {
             Component componentFromDB = await ComponentDP.CreateComponent(component);
 
@@ -66,7 +66,7 @@ namespace ElectroDepotClassLibrary.Stores
                 return false;
             }
 
-            OwnsComponent ownsComponent = new OwnsComponent(id: 0, userID: MainStore.UsersStore.LoggedInUser.ID, componentID: componentFromDB.ID, quantity: 0);
+            OwnsComponent ownsComponent = new OwnsComponent(id: 0, userID: MainStore.UsersStore.LoggedInUser.ID, componentID: componentFromDB.ID, quantity: initialQuantity);
 
             OwnsComponent ownsComponentFromDB = await OwnsComponentDP.CreateOwnComponent(ownsComponent);
 
@@ -223,6 +223,57 @@ namespace ElectroDepotClassLibrary.Stores
             _unusedComponents.AddRange(unusedComponents);
 
             ComponentsLoaded?.Invoke();
+        }
+
+        public async Task<bool> DeleteComponent(int componentId)
+        {
+            var success = await _componentDataProvider.DeleteComponent(componentId);
+            if (success)
+            {
+                var componentToRemove = _components.FirstOrDefault(x => x.ID == componentId);
+                if (componentToRemove != null)
+                {
+                    _components.Remove(componentToRemove);
+                }
+
+                var allComponentToRemove = _allComponents.FirstOrDefault(x => x.Component.ID == componentId);
+                if (allComponentToRemove != null)
+                {
+                    _allComponents.Remove(allComponentToRemove);
+                }
+
+                // Also we can remove it from _componentsFromSystem if it exists
+                var systemComponentToRemove = _componentsFromSystem.FirstOrDefault(x => x.Component.ID == componentId);
+                if (systemComponentToRemove != null)
+                {
+                    _componentsFromSystem.Remove(systemComponentToRemove);
+                }
+
+                // Remove related owned/unused components referencing this ID
+                _ownedComponents.RemoveAll(x => x.ComponentID == componentId);
+                _unusedComponents.RemoveAll(x => x.ComponentID == componentId);
+
+                AllComponentsReload?.Invoke();
+                ComponentsLoaded?.Invoke();
+            }
+            return success;
+        }
+
+        public async Task<bool> DeleteAllComponents()
+        {
+            var success = await _componentDataProvider.DeleteAllComponents();
+            if (success)
+            {
+                _components.Clear();
+                _allComponents.Clear();
+                _componentsFromSystem.Clear();
+                _ownedComponents.Clear();
+                _unusedComponents.Clear();
+
+                AllComponentsReload?.Invoke();
+                ComponentsLoaded?.Invoke();
+            }
+            return success;
         }
     }
 }

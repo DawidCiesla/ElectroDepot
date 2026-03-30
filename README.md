@@ -224,3 +224,18 @@ HOST_BIND=192.168.1.50
 ```
 
 When `HOST_BIND` is set, docker will bind the published ports to that specific interface (e.g. `192.168.1.50:5000:8080`) which limits access to machines on your LAN.
+
+---
+
+**macOS build**
+
+If you only need a macOS application bundle for the desktop client (no Windows MSI), use the included script to publish and package a minimal `.app` bundle.
+
+From the repository root on macOS with the .NET SDK installed run:
+
+```bash
+chmod +x ./scripts/publish-macos.sh
+./scripts/publish-macos.sh all
+```
+
+This will publish the DesktopClient for `osx-arm64` and `osx-x64` and create `.app` bundles under the `publish/` folder (e.g. `publish/ElectroDepot-osx-arm64.app`). You can distribute the `.app` directly or create a DMG using your preferred tool.

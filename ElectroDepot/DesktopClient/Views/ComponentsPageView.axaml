@@ -160,6 +160,11 @@
                             <Label Classes="icon" FontSize="26" Foreground="Black" Content="&#xE702;"></Label>
                           </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Header="Usuń" x:DataType="cont:DetailedComponentContainerHolder" Command="{Binding DeleteComponentCommand}">
+                          <MenuItem.Icon>
+                            <Label Classes="icon" FontSize="26" Foreground="Black" Content="&#xE74D;"></Label>
+                          </MenuItem.Icon>
+                        </MenuItem>
                       </ContextMenu>
                     </Setter>
                     <!--<Setter Property="ToolTip.Tip" Value="Help" />-->

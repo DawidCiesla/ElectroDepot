@@ -243,6 +243,40 @@ namespace DesktopClient.ViewModels
         [ObservableProperty]
         private DetailedComponentContainerHolder _components_SelectedComponent;
 
+        [RelayCommand]
+        public async Task DeleteSelectedComponent()
+        {
+            try 
+            {
+                if (Components_SelectedComponent == null) return;
+                
+                var box = MessageBoxManager.GetMessageBoxStandard(
+                    "Potwierdzenie", 
+                    "Czy na pewno chcesz usunąć ten produkt?", 
+                    ButtonEnum.YesNo, 
+                    MsBox.Avalonia.Enums.Icon.Warning);
+                    
+                var result = await box.ShowAsync();
+                if (result == ButtonResult.Yes)
+                {
+                    var componentId = Components_SelectedComponent.Container.Component.ID;
+                    if (await DatabaseStore.ComponentStore.DeleteComponent(componentId))
+                    {
+                        Components_SelectedComponent = null;
+                    }
+                    else 
+                    {
+                        var errorBox = MessageBoxManager.GetMessageBoxStandard("Błąd", "Nie udało się usunąć produktu.", ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error);
+                        await errorBox.ShowAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CRASH MITIGATED] Exception in DeleteSelectedComponent: {ex}");
+            }
+        }
+
         #endregion
 
         #region Add tab
@@ -1909,21 +1943,27 @@ namespace DesktopClient.ViewModels
 
         private async void SuppliersLoadedHandler()
         {
-            Suppliers.Clear();
-            foreach (Supplier supplier in DatabaseStore.SupplierStore.Suppliers)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Suppliers.Add(new SupplierContainer(supplier));
-            }
+                Suppliers.Clear();
+                foreach (Supplier supplier in DatabaseStore.SupplierStore.Suppliers)
+                {
+                    Suppliers.Add(new SupplierContainer(supplier));
+                }
+            });
         }
 
         private async void HandleCategoriesLoaded()
         {
-            Categories.Clear();
-            IEnumerable<Category> categories = DatabaseStore.CategorieStore.Categories;
-            foreach(Category category in categories)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Categories.Add(category.Name);
-            }
+                Categories.Clear();
+                IEnumerable<Category> categories = DatabaseStore.CategorieStore.Categories;
+                foreach(Category category in categories)
+                {
+                    Categories.Add(category.Name);
+                }
+            });
         }
 
         private async void RefreshSelectedComponentsProjectSource()

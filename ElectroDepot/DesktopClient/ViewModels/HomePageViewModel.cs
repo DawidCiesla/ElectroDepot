@@ -116,7 +116,10 @@ namespace DesktopClient.ViewModels
 
         private async void PurchaseStore_DetailedPurchaseContainersLoadedHandler_SupplierChart()
         {
-            AdjustSeries();
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                AdjustSeries();
+            });
         }
 
         private async void AdjustSeries()
@@ -162,46 +165,65 @@ namespace DesktopClient.ViewModels
 
         private async void PurchaseStore_DetailedPurchaseContainersLoadedHandler()
         {
-            Purchases.Clear();
-            IEnumerable<DetailedPurchaseContainer> purchasesFromDB = DatabaseStore.PurchaseStore.DetailedPurchaseContainers.OrderByDescending(x=>x.PurchaseDate);
-            foreach (DetailedPurchaseContainer purchase in purchasesFromDB)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Purchases.Add(new PurchaseNodeButtonContainer(this, purchase));
-            }
+                Purchases.Clear();
+                IEnumerable<DetailedPurchaseContainer> purchasesFromDB = DatabaseStore.PurchaseStore.DetailedPurchaseContainers.OrderByDescending(x=>x.PurchaseDate);
+                foreach (DetailedPurchaseContainer purchase in purchasesFromDB)
+                {
+                    Purchases.Add(new PurchaseNodeButtonContainer(this, purchase));
+                }
+            });
         }
 
         private async void ProjectsLoadedHandler()
         {
-            Projects.Clear();
-            List<Project> projectsFromDB = DatabaseStore.ProjectStore.Projects.OrderByDescending(x=>x.CreatedAt).ToList();
-            foreach (Project project in projectsFromDB)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
             {
-                IEnumerable<Component> sd = await DatabaseStore.ProjectStore.ProjectDP.GetAllComponentsFromProject(project);
-                Projects.Add(new ProjectNodeButtonContainer(this, project, sd.Count()));
-            }
+                Projects.Clear();
+                List<Project> projectsFromDB = DatabaseStore.ProjectStore.Projects.OrderByDescending(x=>x.CreatedAt).ToList();
+                foreach (Project project in projectsFromDB)
+                {
+                    IEnumerable<Component> sd = await DatabaseStore.ProjectStore.ProjectDP.GetAllComponentsFromProject(project);
+                    Projects.Add(new ProjectNodeButtonContainer(this, project, sd.Count()));
+                }
+            });
         }
 
         private async void ComponentsLoadedHandler()
         {
-            Components.Clear();
-            foreach (Component component in DatabaseStore.ComponentStore.Components)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
             {
-                int categoryID = component.CategoryID;
-                Category foundCategory = await DatabaseStore.CategorieStore.DB.GetCategoryByID(categoryID);
-                
-                component.Category = foundCategory;
-                
-                Components.Add(new ComponentContainer(component));
-            }
+                try
+                {
+                    Components.Clear();
+                    foreach (Component component in DatabaseStore.ComponentStore.Components)
+                    {
+                        int categoryID = component.CategoryID;
+                        Category foundCategory = await DatabaseStore.CategorieStore.DB.GetCategoryByID(categoryID);
+                        
+                        component.Category = foundCategory;
+                        
+                        Components.Add(new ComponentContainer(component));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception in HomePageViewModel.ComponentsLoadedHandler: {ex}");
+                }
+            });
         }
 
         private async void SuppliersLoadedHandler()
         {
-            Suppliers.Clear();
-            foreach(Supplier supplier in DatabaseStore.SupplierStore.Suppliers)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Suppliers.Add(new SupplierContainer(supplier));
-            }
+                Suppliers.Clear();
+                foreach(Supplier supplier in DatabaseStore.SupplierStore.Suppliers)
+                {
+                    Suppliers.Add(new SupplierContainer(supplier));
+                }
+            });
         }
 
     }

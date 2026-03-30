@@ -24,7 +24,7 @@ namespace ElectroDepotClassLibrary.Utility
             }
         }
 
-        public string DefaultConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)) + "\\ElectroDepot\\";
+        public string DefaultConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ElectroDepot") + Path.DirectorySeparatorChar;
 
         private static ApplicationConfig _selfInstance;
 
@@ -73,7 +73,7 @@ namespace ElectroDepotClassLibrary.Utility
         {
             get
             {
-                return $"https://{_data.IP}:{_data.Port}/";
+                return $"http://{_data.IP}:{_data.Port}/";
             }
         }
 
@@ -99,7 +99,7 @@ namespace ElectroDepotClassLibrary.Utility
                 ServerData settings = new ServerData()
                 {
                     IP = "100.76.211.104",
-                    Port = "5001"
+                    Port = "5000"
                 };
 
                 string jsonCreate = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });

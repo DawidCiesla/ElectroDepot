@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:DesktopClient.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="DesktopClient.Views.AIAssistantPageView"
+             x:DataType="viewModels:AIAssistantPageViewModel">
+
+    <Grid RowDefinitions="Auto, Auto, *, Auto" Margin="20">
+        
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Asystent AI Gemini" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+            <TextBlock Text="Wklej link do produktu w sklepie internetowym. Gemini przeanalizuje zawartość strony i wyciągnie szczegóły produktu, aby ułatwić jego dodanie do magazynu." TextWrapping="Wrap" Foreground="Gray"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" ColumnDefinitions="Auto, *, Auto" RowDefinitions="Auto, Auto" Margin="0,0,0,20">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="URL Produktu:" VerticalAlignment="Center" Margin="0,0,10,10" FontWeight="SemiBold"/>
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ProductUrl}" Watermark="https://example.com/product/123" Margin="0,0,10,10"/>
+            <Button Grid.Row="0" Grid.Column="2" Content="Przetwórz (Gemini)" Command="{Binding ProcessLinkCommand}" IsEnabled="{Binding !IsProcessing}" Background="#007ACC" Foreground="White" Width="150" HorizontalContentAlignment="Center"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Klucz API Gemini:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ApiKey}" PasswordChar="•" Watermark="AIzaSy..."/>
+            <Button Grid.Row="1" Grid.Column="2" Content="Zapisz Klucz" Command="{Binding SaveApiKeyCommand}" IsEnabled="{Binding !IsProcessing}" Background="#17A2B8" Foreground="White" Width="150" HorizontalContentAlignment="Center" Margin="10,0,0,0"/>
+        </Grid>
+
+        <Border Grid.Row="2" Background="#1E1E1E" CornerRadius="8" Padding="15">
+            <ScrollViewer>
+                <TextBlock Text="{Binding AiAnalysisResult}" TextWrapping="Wrap" FontFamily="Consolas" Foreground="#D4D4D4"/>
+            </ScrollViewer>
+        </Border>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <TextBlock Text="Początkowa ilość:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="16"/>
+            <NumericUpDown Value="{Binding InitialQuantity}" Minimum="0" Margin="0,0,20,0" Width="120" VerticalAlignment="Center"/>
+            <Button Content="Dodaj do Magazynu" Command="{Binding AddToInventoryCommand}" IsEnabled="{Binding !IsProcessing}" Background="#28A745" Foreground="White" FontSize="16" Padding="20,10"/>
+        </StackPanel>
+    </Grid>
+
+</UserControl>

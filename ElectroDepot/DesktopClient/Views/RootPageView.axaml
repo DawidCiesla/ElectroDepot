@@ -66,6 +66,13 @@
               </StackPanel>
             </Button>
 
+            <Button Classes="default" HorizontalAlignment="Stretch" Command="{Binding NavigatePageCommand}" CommandParameter="AIAssistant">
+              <StackPanel Orientation="Horizontal">
+                <Label Classes="icon" Content="&#xE22A;"></Label>
+                <Label Classes="icontext" Content="AI Assistant"></Label>
+              </StackPanel>
+            </Button>
+
             <!--<Button Classes="default" HorizontalAlignment="Stretch" Command="{Binding NavigatePageCommand}" CommandParameter="Tracking">
               <StackPanel Orientation="Horizontal">
                 <Label Classes="icon" Content="&#xECA4;"></Label>

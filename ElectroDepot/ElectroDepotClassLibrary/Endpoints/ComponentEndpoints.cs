@@ -13,5 +13,6 @@
         public static string GetAvailableComponentsFromUserWithImage(int UserID) => $"ElectroDepot/Components/GetAvailableComponentsFromUserWithImage/{UserID}";
         public static string Update(int ID) => $"ElectroDepot/Components/Update/{ID}";
         public static string Delete(int ID) => $"ElectroDepot/Components/Delete/{ID}";
+        public static string DeleteAll() => $"ElectroDepot/Components/DeleteAll";
     }
 }
