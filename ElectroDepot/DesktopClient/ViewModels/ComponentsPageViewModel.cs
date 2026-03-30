@@ -151,6 +151,7 @@ namespace DesktopClient.ViewModels
             Preview_Image = Preview_PreviewedComponent.Container.Component.Image;
             Preview_NameField = Preview_PreviewedComponent.Container.Component.Name;
             Preview_ManufacturerField = Preview_PreviewedComponent.Container.Component.Manufacturer;
+            Preview_QuantityField = Preview_PreviewedComponent.Container.Owned.Quantity;
             Preview_CategoryField = Preview_PreviewedComponent.Container.Component.Category.Name;
             if(Preview_CategoryField != string.Empty)
             {
@@ -452,8 +453,20 @@ namespace DesktopClient.ViewModels
         private bool IsEditFormInPreviewState()
         {
             if (Preview_NameEditing == false && Preview_ManufacturerEditing == false && Preview_CategoryEditing == false && Preview_DatasheetEditing == false &&
-                Preview_AboutEditing == false && Preview_DescriptionEditing == false && Preview_ImageEditing == false) return true;
+                Preview_AboutEditing == false && Preview_DescriptionEditing == false && Preview_ImageEditing == false && Preview_QuantityEditing == false) return true;
             else return false;
+        }
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(Preview_SaveWholeCommand))]
+        private bool _preview_QuantityNotEditing = true;
+
+        [ObservableProperty]
+        private bool _preview_QuantityEditing;
+        
+        partial void OnPreview_QuantityEditingChanged(bool value)
+        {
+            Preview_ClearAllEditingCommand.NotifyCanExecuteChanged();
         }
 
         private bool WasEditFormChanged()
@@ -466,8 +479,9 @@ namespace DesktopClient.ViewModels
             bool imageChanged = Components_SelectedComponent.Container.Component.ByteImage != ImageConverterUtility.BitmapToBytes(Preview_Image);
             bool aboutChanged = Preview_AboutField != Components_SelectedComponent.Container.Component.ShortDescription;
             bool descriptionChanged = Preview_DescriptionField != Components_SelectedComponent.Container.Component.LongDescription;
+            bool quantityChanged = Preview_QuantityField != Components_SelectedComponent.Container.Owned.Quantity;
 
-            bool ifAny = (nameChanged || manufacturerChanged || categoryChanged || datasheetChanged || aboutChanged || descriptionChanged);
+            bool ifAny = (nameChanged || manufacturerChanged || categoryChanged || datasheetChanged || aboutChanged || descriptionChanged || quantityChanged);
             return ifAny;
         }
 
@@ -633,6 +647,56 @@ namespace DesktopClient.ViewModels
         public async Task Preview_ManufacturerCopy()
         {
             await ClipboardManager.SetText(Preview_ManufacturerField);
+        }
+        #endregion
+
+        #region Quantity
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(Preview_QuantityEditingSaveChangesCommand))]
+        [NotifyCanExecuteChangedFor(nameof(Preview_QuantityClearCommand))]
+        private int _preview_QuantityField;
+
+        partial void OnPreview_QuantityFieldChanged(int value)
+        {
+            Preview_PreviewedComponent.Container.Owned.Quantity = value;
+        }
+
+        [RelayCommand(CanExecute = nameof(Preview_CanQuantityClear))]
+        public void Preview_QuantityClear()
+        {
+            Preview_QuantityField = Components_SelectedComponent.Container.Owned.Quantity;
+        }
+
+        public bool Preview_CanQuantityClear()
+        {
+            if (Components_SelectedComponent == null || Preview_QuantityField == Components_SelectedComponent.Container.Owned.Quantity) return false;
+            else return true;
+        }
+
+        [RelayCommand(CanExecute = nameof(Preview_CanExecuteQuantityEditingSaveChanges))]
+        public void Preview_QuantityEditingSaveChanges()
+        {
+            Preview_QuantityEditing = false;
+            Preview_QuantityNotEditing = true;
+        }
+
+        public bool Preview_CanExecuteQuantityEditingSaveChanges()
+        {
+            if (Preview_QuantityField < 0) return false;
+            else return true;
+        }
+
+        [RelayCommand]
+        public void Preview_QuantityEditingStart()
+        {
+            Preview_QuantityNotEditing = false;
+            Preview_QuantityEditing = true;
+        }
+
+        [RelayCommand]
+        public async Task Preview_QuantityCopy()
+        {
+            await ClipboardManager.SetText(Preview_QuantityField.ToString());
         }
         #endregion
 
@@ -1010,6 +1074,9 @@ namespace DesktopClient.ViewModels
 
             Preview_ImageEditing = false;
             Preview_ImageNotEditing = true;
+            
+            Preview_QuantityEditing = false;
+            Preview_QuantityNotEditing = true;
         }
 
         private void ChangeToPreviewMode()
@@ -1037,6 +1104,9 @@ namespace DesktopClient.ViewModels
 
             Preview_ImageEditing = false;
             Preview_ImageNotEditing = true;
+            
+            Preview_QuantityEditing = false;
+            Preview_QuantityNotEditing = true;
         }
 
         [RelayCommand]
@@ -1053,6 +1123,13 @@ namespace DesktopClient.ViewModels
             try
             {
                 Component result = await DatabaseStore.ComponentStore.UpdateComponent(Preview_PreviewedComponent.Container.Component);
+                
+                bool quantityChanged = Preview_QuantityField != Components_SelectedComponent.Container.Owned.Quantity;
+                if (quantityChanged)
+                {
+                    Preview_PreviewedComponent.Container.Owned.Quantity = Preview_QuantityField;
+                    await DatabaseStore.ComponentStore.UpdateOwnsComponent(Preview_PreviewedComponent.Container.Owned);
+                }
 
                 if (result != null)
                 {
@@ -1080,7 +1157,7 @@ namespace DesktopClient.ViewModels
         public bool Preview_CanSaveWhole()
         {
             if(Preview_DescriptionNotEditing == true && Preview_AboutNotEditing == true && Preview_NameNotEditing == true && Preview_ManufacturerNotEditing == true &&
-               Preview_CategoryNotEditing == true && Preview_DatasheetNotEditing == true && Preview_ImageNotEditing == true && WasEditFormChanged() == true)
+               Preview_CategoryNotEditing == true && Preview_DatasheetNotEditing == true && Preview_ImageNotEditing == true && Preview_QuantityNotEditing == true && WasEditFormChanged() == true)
             {
                 return true;
             }

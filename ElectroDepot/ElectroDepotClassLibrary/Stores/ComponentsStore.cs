@@ -57,6 +57,28 @@ namespace ElectroDepotClassLibrary.Stores
             return result;
         }
 
+        public async Task<bool> UpdateOwnsComponent(OwnsComponent ownsComponent)
+        {
+            var success = await OwnsComponentDP.UpdateOwnsComponent(ownsComponent);
+            if (success)
+            {
+                int index = _ownedComponents.FindIndex(x => x.ID == ownsComponent.ID);
+                if (index != -1)
+                {
+                    _ownedComponents[index] = ownsComponent;
+                }
+                
+                int unusedIndex = _unusedComponents.FindIndex(x => x.ID == ownsComponent.ID);
+                if (unusedIndex != -1)
+                {
+                    _unusedComponents[unusedIndex] = ownsComponent;
+                }
+                
+                ComponentsLoaded?.Invoke();
+            }
+            return success;
+        }
+
         public async Task<bool> InsertNewComponent(Component component, int initialQuantity = 0)
         {
             Component componentFromDB = await ComponentDP.CreateComponent(component);

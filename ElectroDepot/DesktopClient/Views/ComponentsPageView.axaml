@@ -373,11 +373,12 @@
                     <!-- Fields section-->
                     <Grid Grid.Column="1" Margin="0 5 5 5">
                       <Border CornerRadius="5" BorderThickness="1" BorderBrush="Black" Background="{DynamicResource PltWhiteMilk}">
-                        <Grid RowDefinitions="auto auto auto auto" ColumnDefinitions="auto *">
+                        <Grid RowDefinitions="auto auto auto auto auto" ColumnDefinitions="auto *">
                           <Label Classes="DefaultLabelRightNoMin" FontWeight="Bold" Grid.Row="0" Grid.Column="0">Name:</Label>
                           <Label Classes="DefaultLabelRightNoMin" FontWeight="Bold" Grid.Row="1" Grid.Column="0">Manufacturer:</Label>
-                          <Label Classes="DefaultLabelRightNoMin" FontWeight="Bold" Grid.Row="2" Grid.Column="0">Category:</Label>
-                          <Label Classes="DefaultLabelRightNoMin" FontWeight="Bold" Grid.Row="3" Grid.Column="0">Datasheet:</Label>
+                          <Label Classes="DefaultLabelRightNoMin" FontWeight="Bold" Grid.Row="2" Grid.Column="0">Quantity:</Label>
+                          <Label Classes="DefaultLabelRightNoMin" FontWeight="Bold" Grid.Row="3" Grid.Column="0">Category:</Label>
+                          <Label Classes="DefaultLabelRightNoMin" FontWeight="Bold" Grid.Row="4" Grid.Column="0">Datasheet:</Label>
 
                           <!-- Name field preview/edit -->
                           <TextBlock Classes="DefaultTextBlock" x:Name="PreviewNameTextBlock" Grid.Row="0" Grid.Column="1" Text="{Binding Preview_NameField}" IsVisible="{Binding Preview_NameNotEditing}"></TextBlock>
@@ -415,9 +416,27 @@
                             </StackPanel>
                           </Grid>
 
-                          <!-- Category field preview/edit -->
-                          <TextBlock Classes="DefaultTextBlock" Grid.Row="2" Grid.Column="1" Text="{Binding Preview_CategoryField}" IsVisible="{Binding Preview_CategoryNotEditing}"></TextBlock>
+                          <!-- Quantity field preview/edit -->
+                          <TextBlock Classes="DefaultTextBlock" Grid.Row="2" Grid.Column="1" Text="{Binding Preview_QuantityField}" IsVisible="{Binding Preview_QuantityNotEditing}"></TextBlock>
                           <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="* auto" MinHeight="44">
+                            <NumericUpDown Grid.Column="0" Margin="5 5 0 0" FormatString="0" Minimum="0" Value="{Binding Preview_QuantityField}" HorizontalAlignment="Stretch" IsVisible="{Binding Preview_QuantityEditing}"></NumericUpDown>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="5" Margin="5 5 5 0" IsVisible="{Binding Preview_IsEditing}">
+                              <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding Preview_QuantityEditing}">
+                                <UIElements:RevertButton Command="{Binding Preview_QuantityClearCommand}"></UIElements:RevertButton>
+                                <UIElements:OkButton Command="{Binding Preview_QuantityEditingSaveChangesCommand}"></UIElements:OkButton>
+                              </StackPanel>
+                              <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding Preview_QuantityNotEditing}">
+                                <UIElements:EditButton Command="{Binding Preview_QuantityEditingStartCommand}"></UIElements:EditButton>
+                              </StackPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="5" Margin="5 5 5 0" IsVisible="{Binding Preview_IsPreviewing}">
+                              <UIElements:CopyToClipboardButton Command="{Binding Preview_QuantityCopyCommand}"></UIElements:CopyToClipboardButton>
+                            </StackPanel>
+                          </Grid>
+
+                          <!-- Category field preview/edit -->
+                          <TextBlock Classes="DefaultTextBlock" Grid.Row="3" Grid.Column="1" Text="{Binding Preview_CategoryField}" IsVisible="{Binding Preview_CategoryNotEditing}"></TextBlock>
+                          <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="* auto" MinHeight="44">
                             <ComboBox Classes="DefaultComboBoxStretch" Grid.Column="0" Margin="5 5 0 0" ItemsSource="{Binding Categories}" SelectedItem="{Binding Preview_CategoryComboBoxItem}" HorizontalAlignment="Stretch" IsVisible="{Binding Preview_CategoryEditing}"></ComboBox>
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="5" Margin="5 5 5 0" IsVisible="False">
                               <!--IsVisible="{Binding Preview_IsEditing}">-->
@@ -435,8 +454,8 @@
                           </Grid>
 
                           <!-- Datasheet field preview/edit -->
-                          <TextBlock Classes="DefaultTextBlock" Grid.Row="3" Grid.Column="1" Text="{Binding Preview_DatasheetField}" IsVisible="{Binding Preview_DatasheetNotEditing}"></TextBlock>
-                          <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="* auto" MinHeight="44">
+                          <TextBlock Classes="DefaultTextBlock" Grid.Row="4" Grid.Column="1" Text="{Binding Preview_DatasheetField}" IsVisible="{Binding Preview_DatasheetNotEditing}"></TextBlock>
+                          <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="* auto" MinHeight="44">
                             <TextBox Classes="DefaultTextBoxStretch" Grid.Column="0" Margin="5 5 0 0" Text="{Binding Preview_DatasheetField}" HorizontalAlignment="Stretch" IsVisible="{Binding Preview_DatasheetEditing}"></TextBox>
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="5" Margin="5 5 5 0" IsVisible="{Binding Preview_IsEditing}">
                               <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding Preview_DatasheetEditing}">

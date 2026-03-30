@@ -200,7 +200,7 @@ namespace ElectroDepotClassLibrary.DataProviders
             var json = JsonSerializer.Serialize(ownsComponent.ToUpdateDTO());
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            string url = ComponentEndpoints.Update(ownsComponent.ID);
+            string url = OwnsComponentEndpoints.Update(ownsComponent.ID);
             var response = await HTTPClient.PutAsync(url, content);
 
             return response.IsSuccessStatusCode;
@@ -208,7 +208,7 @@ namespace ElectroDepotClassLibrary.DataProviders
 
         public async Task<bool> DeleteComponent(OwnsComponent ownsComponent)
         {
-            string url = ComponentEndpoints.Delete(ownsComponent.ID);
+            string url = OwnsComponentEndpoints.Delete(ownsComponent.ID);
             var response = await HTTPClient.DeleteAsync(url);
             return response.IsSuccessStatusCode;
         }
