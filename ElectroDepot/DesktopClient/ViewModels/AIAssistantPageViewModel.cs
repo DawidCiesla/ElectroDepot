@@ -212,6 +212,23 @@ namespace DesktopClient.ViewModels
                 return;
             }
 
+            // Check if component already exists
+            var existingComponent = DatabaseStore.ComponentStore.FindExistingComponent(_parsedComponent.Name, _parsedComponent.Manufacturer);
+            if (existingComponent != null)
+            {
+                var existingOwnsComponent = DatabaseStore.ComponentStore.OwnedComponents
+                    .FirstOrDefault(oc => oc.ComponentID == existingComponent.ID);
+
+                int currentQuantity = existingOwnsComponent?.Quantity ?? 0;
+
+                var message = $"Produkt \"{existingComponent.Name}\" od producenta \"{existingComponent.Manufacturer}\" już istnieje w magazynie.\n\n" +
+                              $"Aktualna ilość na stanie: {currentQuantity}\n\n" +
+                              $"Jeśli chcesz zaktualizować ilość, przejdź do widoku magazynu i edytuj istniejący produkt.";
+
+                await MsBoxService.DisplayMessageBox(message, Icon.Info);
+                return;
+            }
+
             IsProcessing = true;
             try
             {

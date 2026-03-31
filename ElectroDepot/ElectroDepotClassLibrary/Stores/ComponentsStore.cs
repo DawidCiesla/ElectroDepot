@@ -297,5 +297,13 @@ namespace ElectroDepotClassLibrary.Stores
             }
             return success;
         }
+
+        public Component? FindExistingComponent(string? name, string? manufacturer)
+        {
+            var snapshot = _components.ToList();
+            return snapshot.FirstOrDefault(c =>
+                string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Manufacturer, manufacturer, StringComparison.OrdinalIgnoreCase));
+        }
     }
 }
