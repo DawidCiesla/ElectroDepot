@@ -298,11 +298,11 @@ namespace ElectroDepotClassLibrary.Stores
             return success;
         }
 
-        public Component FindExistingComponent(string name, string manufacturer)
+        public Component? FindExistingComponent(string? name, string? manufacturer)
         {
             return _components.FirstOrDefault(c =>
-                c.Name.Equals(name, StringComparison.OrdinalIgnoreCase) &&
-                c.Manufacturer.Equals(manufacturer, StringComparison.OrdinalIgnoreCase));
+                string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Manufacturer, manufacturer, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
