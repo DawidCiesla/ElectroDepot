@@ -300,7 +300,8 @@ namespace ElectroDepotClassLibrary.Stores
 
         public Component? FindExistingComponent(string? name, string? manufacturer)
         {
-            return _components.FirstOrDefault(c =>
+            var snapshot = _components.ToList();
+            return snapshot.FirstOrDefault(c =>
                 string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(c.Manufacturer, manufacturer, StringComparison.OrdinalIgnoreCase));
         }
