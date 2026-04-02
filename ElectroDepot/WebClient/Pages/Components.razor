@@ -7,7 +7,7 @@
 
 @if (!AuthService.IsAuthenticated)
 {
-    NavigationManager.NavigateTo("/login");
+    <p>Redirecting to login...</p>
 }
 else
 {
@@ -85,6 +85,11 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        if (!AuthService.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
         await LoadComponents();
     }
 

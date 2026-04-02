@@ -23,6 +23,11 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <InputText id="username" @bind-Value="registerModel.Username" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <InputText id="email" @bind-Value="registerModel.Email" class="form-control" />
                         </div>
@@ -70,6 +75,7 @@
     private class RegisterModel
     {
         public string Name { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string ConfirmPassword { get; set; } = string.Empty;
@@ -88,7 +94,7 @@
                 return;
             }
 
-            var user = await ApiService.RegisterAsync(registerModel.Name, registerModel.Email, registerModel.Password);
+            var user = await ApiService.RegisterAsync(registerModel.Username, registerModel.Email, registerModel.Password, registerModel.Name);
             if (user != null)
             {
                 AuthService.Login(user);

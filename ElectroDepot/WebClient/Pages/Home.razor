@@ -1,4 +1,5 @@
 ﻿@page "/"
+@implements IDisposable
 @inject AuthenticationService AuthService
 @inject ApiService ApiService
 @inject NavigationManager NavigationManager
@@ -160,14 +161,21 @@ else
         AuthService.OnAuthenticationStateChanged += HandleAuthenticationStateChanged;
     }
 
-    private async void HandleAuthenticationStateChanged()
+    private void HandleAuthenticationStateChanged()
     {
         if (AuthService.IsAuthenticated && AuthService.CurrentUser != null)
         {
             userName = AuthService.CurrentUser.Name;
-            await LoadData();
+            _ = InvokeAsync(async () =>
+            {
+                await LoadData();
+                StateHasChanged();
+            });
         }
-        StateHasChanged();
+        else
+        {
+            StateHasChanged();
+        }
     }
 
     private async Task LoadData()

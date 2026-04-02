@@ -6,7 +6,7 @@
 
 @if (!AuthService.IsAuthenticated)
 {
-    NavigationManager.NavigateTo("/login");
+    <p>Redirecting to login...</p>
 }
 else
 {
@@ -55,6 +55,14 @@ else
 }
 
 @code {
+    protected override void OnInitialized()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
     private void Logout()
     {
         AuthService.Logout();
