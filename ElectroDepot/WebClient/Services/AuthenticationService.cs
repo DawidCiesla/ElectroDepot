@@ -1,14 +1,12 @@
-using ElectroDepotClassLibrary.DTOs;
-
 namespace WebClient.Services
 {
     public class AuthenticationService
     {
-        private UserDTO? _currentUser;
+        private UserSession? _currentUser;
 
         public event Action? OnAuthenticationStateChanged;
 
-        public UserDTO? CurrentUser
+        public UserSession? CurrentUser
         {
             get => _currentUser;
             private set
@@ -20,9 +18,9 @@ namespace WebClient.Services
 
         public bool IsAuthenticated => CurrentUser != null;
 
-        public void Login(UserDTO user)
+        public void Login(UserSession session)
         {
-            CurrentUser = user;
+            CurrentUser = session;
         }
 
         public void Logout()

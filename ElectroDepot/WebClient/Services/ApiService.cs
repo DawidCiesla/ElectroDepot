@@ -14,7 +14,7 @@ namespace WebClient.Services
         }
 
         // User API methods
-        public async Task<UserDTO?> LoginAsync(string email, string password)
+        public async Task<UserSession?> LoginAsync(string email, string password)
         {
             try
             {
@@ -24,7 +24,9 @@ namespace WebClient.Services
 
                 var hasher = new PasswordHasher<UserDTO>();
                 var result = hasher.VerifyHashedPassword(user, user.Password, password);
-                return result == PasswordVerificationResult.Success ? user : null;
+                if (result != PasswordVerificationResult.Success) return null;
+
+                return new UserSession(user.ID, user.Username, user.Email, user.Name);
             }
             catch (Exception ex)
             {
@@ -33,7 +35,7 @@ namespace WebClient.Services
             }
         }
 
-        public async Task<UserDTO?> RegisterAsync(string username, string email, string password, string name)
+        public async Task<UserSession?> RegisterAsync(string username, string email, string password, string name)
         {
             var tempDto = new CreateUserDTO(Username: username, Email: email, Password: password, Name: name);
             var hasher = new PasswordHasher<CreateUserDTO>();
@@ -43,7 +45,9 @@ namespace WebClient.Services
             var response = await _httpClient.PostAsJsonAsync("/ElectroDepot/Users/Create", dtoWithHash);
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<UserDTO>();
+                var created = await response.Content.ReadFromJsonAsync<UserDTO>();
+                if (created == null) return null;
+                return new UserSession(created.ID, created.Username, created.Email, created.Name);
             }
             return null;
         }

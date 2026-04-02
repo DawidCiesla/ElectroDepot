@@ -255,7 +255,7 @@ The web client provides the same functionality as the desktop application:
 - **Purchases**: Track your component purchases
 - **Profile**: View and manage your profile
 
-**Note**: The web client requires an active internet connection to the server. Make sure your firewall allows connections to the server ports (5000 and 5001).
+**Note**: The web client requires network connectivity to the server. Make sure your firewall allows connections to the server ports (5000 and 5001).
 
 ---
 
