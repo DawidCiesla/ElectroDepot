@@ -117,11 +117,16 @@ The ElectroDepot solution is structured into multiple projects, each serving a d
 ### 4. 🐳 Docker-Compose  
    - Defines containerized environments for seamless deployment using **Docker Compose**.  
 
-### 5. 🔗 ElectroDepotClassLibrary  
-   - A shared library facilitating **data exchange** between the server and client.  
-   - Provides essential functionalities and reusable client-side logic.  
+### 5. 💻 WebClient
+   - A web-based client built with **Blazor WebAssembly**.
+   - Accessible through any modern web browser on the local network.
+   - Provides the same functionality as the desktop client.
 
-### 6. 🧪 ElectroDepotClassLibraryTests  
+### 6. 🔗 ElectroDepotClassLibrary
+   - A shared library facilitating **data exchange** between the server and client.
+   - Provides essential functionalities and reusable client-side logic.
+
+### 7. 🧪 ElectroDepotClassLibraryTests
    - Contains automated tests for **server endpoints** and **client-side logic** using **XUnit**.  
 
 
@@ -224,6 +229,33 @@ HOST_BIND=192.168.1.50
 ```
 
 When `HOST_BIND` is set, docker will bind the published ports to that specific interface (e.g. `192.168.1.50:5000:8080`) which limits access to machines on your LAN.
+
+---
+
+### Web Client
+
+Once the server is running, you can access the web version of ElectroDepot through your browser.
+
+#### 1️⃣ Access the Web Application
+- Open your web browser (Chrome, Firefox, Edge, Safari, etc.)
+- Navigate to the server address:
+  - **Local access**: `http://localhost:5000` or `https://localhost:5001`
+  - **LAN access**: `http://<server-ip>:5000` or `https://<server-ip>:5001`
+    - Replace `<server-ip>` with your server's IP address (e.g., `http://192.168.1.50:5000`)
+
+#### 2️⃣ Login or Register
+- If you already have an account from the desktop client, use the same credentials to login
+- Otherwise, create a new account using the Register page
+
+#### 3️⃣ Use the Application
+The web client provides the same functionality as the desktop application:
+- **Home**: View your projects, purchases, and components summary
+- **Components**: Manage your electronic components inventory
+- **Projects**: Create and manage your projects
+- **Purchases**: Track your component purchases
+- **Profile**: View and manage your profile
+
+**Note**: The web client requires an active internet connection to the server. Make sure your firewall allows connections to the server ports (5000 and 5001).
 
 ---
 
