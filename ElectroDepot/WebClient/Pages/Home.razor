@@ -1,0 +1,193 @@
+﻿@page "/"
+@inject AuthenticationService AuthService
+@inject ApiService ApiService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Home - ElectroDepot</PageTitle>
+
+@if (AuthService.IsAuthenticated)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2>@currentDate</h2>
+                <h1>Welcome back, @userName!</h1>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3><i class="bi bi-folder-fill"></i> Projects</h3>
+                            <button class="btn btn-primary" @onclick='() => NavigationManager.NavigateTo("/projects")'>
+                                <i class="bi bi-plus-circle"></i> Create New Project
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (projects == null)
+                        {
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        }
+                        else if (projects.Count == 0)
+                        {
+                            <p>No projects yet. Create your first project!</p>
+                        }
+                        else
+                        {
+                            <div class="row">
+                                @foreach (var project in projects.Take(6))
+                                {
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card project-card" @onclick='() => NavigationManager.NavigateTo($"/projects/{project.ID}")'>
+                                            <div class="card-body">
+                                                <h5 class="card-title">@project.Name</h5>
+                                                <p class="card-text">@project.Description</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3><i class="bi bi-cart-fill"></i> Recent Purchases</h3>
+                            <button class="btn btn-primary" @onclick='() => NavigationManager.NavigateTo("/purchases")'>
+                                <i class="bi bi-plus-circle"></i> Add Purchase
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (purchases == null)
+                        {
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        }
+                        else if (purchases.Count == 0)
+                        {
+                            <p>No purchases yet. Add your first purchase!</p>
+                        }
+                        else
+                        {
+                            <div class="list-group">
+                                @foreach (var purchase in purchases.Take(5))
+                                {
+                                    <a href="/purchases/@purchase.ID" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1">Purchase #@purchase.ID</h5>
+                                            <small>@purchase.PurchaseDate.ToString("dd/MM/yyyy")</small>
+                                        </div>
+                                        <p class="mb-1">Total: $@purchase.TotalPrice</p>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="bi bi-cpu-fill"></i> Component Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        @if (components == null)
+                        {
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <h4>Total Components: @components.Count</h4>
+                            <a href="/components" class="btn btn-primary mt-2">View All Components</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container mt-5">
+        <div class="text-center">
+            <h1>Welcome to ElectroDepot</h1>
+            <p class="lead">Manage your electronic components inventory with ease</p>
+            <div class="mt-4">
+                <a href="/login" class="btn btn-primary btn-lg me-2">Login</a>
+                <a href="/register" class="btn btn-outline-primary btn-lg">Register</a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string currentDate = DateTime.Now.ToString("dddd, MMMM dd, yyyy");
+    private string userName = "User";
+    private List<ProjectDTO>? projects;
+    private List<PurchaseDTO>? purchases;
+    private List<ComponentDTO>? components;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsAuthenticated && AuthService.CurrentUser != null)
+        {
+            userName = AuthService.CurrentUser.Name;
+            await LoadData();
+        }
+
+        AuthService.OnAuthenticationStateChanged += HandleAuthenticationStateChanged;
+    }
+
+    private async void HandleAuthenticationStateChanged()
+    {
+        if (AuthService.IsAuthenticated && AuthService.CurrentUser != null)
+        {
+            userName = AuthService.CurrentUser.Name;
+            await LoadData();
+        }
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            projects = await ApiService.GetProjectsAsync();
+            purchases = await ApiService.GetPurchasesAsync();
+            components = await ApiService.GetComponentsAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthenticationStateChanged -= HandleAuthenticationStateChanged;
+    }
+}
+

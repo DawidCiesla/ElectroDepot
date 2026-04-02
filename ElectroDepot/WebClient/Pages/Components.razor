@@ -1,0 +1,134 @@
+@page "/components"
+@inject ApiService ApiService
+@inject AuthenticationService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Components - ElectroDepot</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    NavigationManager.NavigateTo("/login");
+}
+else
+{
+    <div class="container-fluid mt-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1><i class="bi bi-cpu-fill"></i> Components</h1>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" @onclick="ShowAddComponentModal">
+                    <i class="bi bi-plus-circle"></i> Add Component
+                </button>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (components == null || components.Count == 0)
+        {
+            <div class="alert alert-info" role="alert">
+                No components found. Add your first component to get started!
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <th>Category</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var component in components)
+                                {
+                                <tr>
+                                        <td>@component.Name</td>
+                                        <td>@component.ShortDescription</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info" @onclick='() => ViewComponent(component.ID)'>
+                                                <i class="bi bi-eye"></i> View
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" @onclick='() => DeleteComponent(component.ID)'>
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<ComponentDTO>? components;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadComponents();
+    }
+
+    private async Task LoadComponents()
+    {
+        isLoading = true;
+        try
+        {
+            components = await ApiService.GetComponentsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading components: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowAddComponentModal()
+    {
+        // TODO: Implement add component modal
+        Console.WriteLine("Add component clicked");
+    }
+
+    private void ViewComponent(int id)
+    {
+        NavigationManager.NavigateTo($"/components/{id}");
+    }
+
+    private async Task DeleteComponent(int id)
+    {
+        try
+        {
+            var success = await ApiService.DeleteComponentAsync(id);
+            if (success)
+            {
+                await LoadComponents();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting component: {ex.Message}");
+        }
+    }
+}

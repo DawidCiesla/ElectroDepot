@@ -1,0 +1,134 @@
+@page "/purchases"
+@inject ApiService ApiService
+@inject AuthenticationService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Purchases - ElectroDepot</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    NavigationManager.NavigateTo("/login");
+}
+else
+{
+    <div class="container-fluid mt-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1><i class="bi bi-cart-fill"></i> Purchases</h1>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" @onclick="ShowAddPurchaseModal">
+                    <i class="bi bi-plus-circle"></i> Add Purchase
+                </button>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (purchases == null || purchases.Count == 0)
+        {
+            <div class="alert alert-info" role="alert">
+                No purchases found. Add your first purchase to get started!
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Date</th>
+                                    <th>Supplier</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var purchase in purchases)
+                                {
+                                    <tr>
+                                        <td>Purchase #@purchase.ID</td>
+                                        <td>-</td>
+                                        <td>@purchase.PurchaseDate.ToString("dd/MM/yyyy")</td>
+                                        <td>-</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info" @onclick='() => ViewPurchase(purchase.ID)'>
+                                                <i class="bi bi-eye"></i> View
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" @onclick='() => DeletePurchase(purchase.ID)'>
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<PurchaseDTO>? purchases;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPurchases();
+    }
+
+    private async Task LoadPurchases()
+    {
+        isLoading = true;
+        try
+        {
+            purchases = await ApiService.GetPurchasesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading purchases: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowAddPurchaseModal()
+    {
+        // TODO: Implement add purchase modal
+        Console.WriteLine("Add purchase clicked");
+    }
+
+    private void ViewPurchase(int id)
+    {
+        NavigationManager.NavigateTo($"/purchases/{id}");
+    }
+
+    private async Task DeletePurchase(int id)
+    {
+        try
+        {
+            var success = await ApiService.DeletePurchaseAsync(id);
+            if (success)
+            {
+                await LoadPurchases();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting purchase: {ex.Message}");
+        }
+    }
+}

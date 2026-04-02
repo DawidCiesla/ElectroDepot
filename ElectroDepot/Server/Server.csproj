@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ElectroDepotClassLibrary\ElectroDepotClassLibrary.csproj" />
+    <ProjectReference Include="..\WebClient\WebClient.csproj" />
   </ItemGroup>
 
   <ItemGroup>
