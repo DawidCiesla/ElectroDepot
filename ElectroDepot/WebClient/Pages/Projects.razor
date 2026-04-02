@@ -1,0 +1,124 @@
+@page "/projects"
+@inject ApiService ApiService
+@inject AuthenticationService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Projects - ElectroDepot</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <p>Redirecting to login...</p>
+}
+else
+{
+    <div class="container-fluid mt-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1><i class="bi bi-folder-fill"></i> Projects</h1>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" @onclick="ShowAddProjectModal">
+                    <i class="bi bi-plus-circle"></i> Create Project
+                </button>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (projects == null || projects.Count == 0)
+        {
+            <div class="alert alert-info" role="alert">
+                No projects found. Create your first project to get started!
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var project in projects)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">@project.Name</h5>
+                                <p class="card-text">@project.Description</p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-sm btn-info me-2" @onclick='() => ViewProject(project.ID)'>
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                                <button class="btn btn-sm btn-danger" @onclick='() => DeleteProject(project.ID)'>
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<ProjectDTO>? projects;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        await LoadProjects();
+    }
+
+    private async Task LoadProjects()
+    {
+        isLoading = true;
+        try
+        {
+            projects = await ApiService.GetProjectsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading projects: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowAddProjectModal()
+    {
+        // TODO: Implement add project modal
+        Console.WriteLine("Add project clicked");
+    }
+
+    private void ViewProject(int id)
+    {
+        NavigationManager.NavigateTo($"/projects/{id}");
+    }
+
+    private async Task DeleteProject(int id)
+    {
+        try
+        {
+            var success = await ApiService.DeleteProjectAsync(id);
+            if (success)
+            {
+                await LoadProjects();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting project: {ex.Message}");
+        }
+    }
+}

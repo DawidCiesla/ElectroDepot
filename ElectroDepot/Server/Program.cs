@@ -107,11 +107,18 @@ namespace Server
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+                app.UseWebAssemblyDebugging();
             }
+
+            app.UseBlazorFrameworkFiles();
+            app.UseStaticFiles();
 
             app.UseHttpsRedirection();
             app.UseAuthorization();
+
             app.MapControllers();
+            app.MapFallbackToFile("index.html");
+
             await app.RunAsync();
         }
     }
