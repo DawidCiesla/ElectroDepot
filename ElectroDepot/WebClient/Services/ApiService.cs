@@ -175,5 +175,12 @@ namespace WebClient.Services
         {
             return await _httpClient.GetFromJsonAsync<List<CategoryDTO>>("/ElectroDepot/Categories/GetAll") ?? new List<CategoryDTO>();
         }
+
+        // OwnsComponent API methods
+        public async Task<List<OwnsComponentDTO>> GetOwnedComponentsForUserAsync(int userId)
+        {
+            return await _httpClient.GetFromJsonAsync<List<OwnsComponentDTO>>($"/ElectroDepot/OwnsComponents/GetAllOwnComponentFromUser/{userId}")
+                ?? new List<OwnsComponentDTO>();
+        }
     }
 }

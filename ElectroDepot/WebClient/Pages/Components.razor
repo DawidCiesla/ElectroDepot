@@ -31,6 +31,12 @@ else
                 </div>
             </div>
         }
+        else if (!string.IsNullOrEmpty(loadError))
+        {
+            <div class="alert alert-danger" role="alert">
+                @loadError
+            </div>
+        }
         else if (components == null || components.Count == 0)
         {
             <div class="alert alert-info" role="alert">
@@ -58,8 +64,8 @@ else
                                 <tr>
                                         <td>@component.Name</td>
                                         <td>@component.ShortDescription</td>
-                                        <td>-</td>
-                                        <td>-</td>
+                                        <td>@GetOwnedQuantity(component)</td>
+                                        <td>@GetCategoryName(component)</td>
                                         <td>
                                             <button class="btn btn-sm btn-info" @onclick='() => ViewComponent(component.ID)'>
                                                 <i class="bi bi-eye"></i> View
@@ -81,6 +87,9 @@ else
 
 @code {
     private List<ComponentDTO>? components;
+    private Dictionary<int, string> categoryLookup = new();
+    private Dictionary<int, int> ownedQuantities = new();
+    private string? loadError;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -96,13 +105,32 @@ else
     private async Task LoadComponents()
     {
         isLoading = true;
+        loadError = null;
         try
         {
-            components = await ApiService.GetComponentsAsync();
+            var userId = AuthService.CurrentUser?.ID;
+
+            var componentsTask = ApiService.GetComponentsAsync();
+            var categoriesTask = ApiService.GetCategoriesAsync();
+            Task<List<OwnsComponentDTO>> ownedTask = Task.FromResult(new List<OwnsComponentDTO>());
+
+            if (userId.HasValue)
+            {
+                ownedTask = ApiService.GetOwnedComponentsForUserAsync(userId.Value);
+            }
+
+            await Task.WhenAll(componentsTask, categoriesTask, ownedTask);
+
+            components = componentsTask.Result;
+            categoryLookup = categoriesTask.Result.ToDictionary(c => c.ID, c => c.Name);
+            ownedQuantities = ownedTask.Result
+                .GroupBy(o => o.ComponentID)
+                .ToDictionary(group => group.Key, group => group.Sum(x => x.Quantity));
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading components: {ex.Message}");
+            loadError = "Failed to load components. Please try again.";
         }
         finally
         {
@@ -114,6 +142,16 @@ else
     {
         // TODO: Implement add component modal
         Console.WriteLine("Add component clicked");
+    }
+
+    private string GetCategoryName(ComponentDTO component)
+    {
+        return categoryLookup.TryGetValue(component.CategoryID, out var name) ? name : "Unknown";
+    }
+
+    private int GetOwnedQuantity(ComponentDTO component)
+    {
+        return ownedQuantities.TryGetValue(component.ID, out var quantity) ? quantity : 0;
     }
 
     private void ViewComponent(int id)

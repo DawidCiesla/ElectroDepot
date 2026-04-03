@@ -1,0 +1,143 @@
+@page "/components/{ComponentId:int}"
+@inject ApiService ApiService
+@inject AuthenticationService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Component Details - ElectroDepot</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <p>Redirecting to login...</p>
+}
+else if (isLoading)
+{
+    <div class="text-center mt-4">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (!string.IsNullOrEmpty(loadError))
+{
+    <div class="alert alert-danger mt-4" role="alert">
+        @loadError
+    </div>
+}
+else if (component == null)
+{
+    <div class="alert alert-warning mt-4" role="alert">
+        Component not found.
+    </div>
+}
+else
+{
+    <div class="container mt-4">
+        <button class="btn btn-link mb-3" @onclick="NavigateBack">
+            <i class="bi bi-arrow-left"></i> Back to Components
+        </button>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h2 class="card-title mb-1">@component.Name</h2>
+                        <p class="text-muted mb-0">Manufacturer: @component.Manufacturer</p>
+                    </div>
+                    <span class="badge bg-secondary fs-6">@categoryName</span>
+                </div>
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Quantity owned</dt>
+                    <dd class="col-sm-9">@ownedQuantity</dd>
+
+                    <dt class="col-sm-3">Short description</dt>
+                    <dd class="col-sm-9">@component.ShortDescription</dd>
+
+                    <dt class="col-sm-3">Long description</dt>
+                    <dd class="col-sm-9">@component.LongDescription</dd>
+
+                    <dt class="col-sm-3">Datasheet</dt>
+                    <dd class="col-sm-9">
+                        @if (!string.IsNullOrWhiteSpace(component.DatasheetLink))
+                        {
+                            <a href="@component.DatasheetLink" target="_blank" rel="noopener noreferrer">Open datasheet</a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not provided</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int ComponentId { get; set; }
+
+    private ComponentDTO? component;
+    private string categoryName = "Unknown";
+    private int ownedQuantity;
+    private bool isLoading = true;
+    private string? loadError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadComponent();
+    }
+
+    private async Task LoadComponent()
+    {
+        isLoading = true;
+        loadError = null;
+        ownedQuantity = 0;
+        categoryName = "Unknown";
+
+        try
+        {
+            component = await ApiService.GetComponentByIdAsync(ComponentId);
+
+            if (component == null)
+            {
+                loadError = "Component not found.";
+                return;
+            }
+
+            var categoriesTask = ApiService.GetCategoriesAsync();
+            Task<List<OwnsComponentDTO>> ownedTask = Task.FromResult(new List<OwnsComponentDTO>());
+
+            var userId = AuthService.CurrentUser?.ID;
+            if (userId.HasValue)
+            {
+                ownedTask = ApiService.GetOwnedComponentsForUserAsync(userId.Value);
+            }
+
+            await Task.WhenAll(categoriesTask, ownedTask);
+
+            categoryName = categoriesTask.Result.FirstOrDefault(c => c.ID == component.CategoryID)?.Name ?? "Unknown";
+            ownedQuantity = ownedTask.Result.Where(o => o.ComponentID == component.ID).Sum(o => o.Quantity);
+        }
+        catch (Exception ex)
+        {
+            loadError = "Failed to load component details. Please try again.";
+            Console.WriteLine($"Error loading component details: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("/components");
+    }
+}
