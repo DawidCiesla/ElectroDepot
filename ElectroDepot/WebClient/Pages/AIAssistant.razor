@@ -1,0 +1,459 @@
+@page "/ai-assistant"
+@inject ApiService ApiService
+@inject AuthenticationService AuthService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+@using System.Text
+@using System.Text.Json
+@using System.Linq
+
+<PageTitle>AI Assistant - ElectroDepot</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <p>Redirecting to login...</p>
+}
+else
+{
+    <div class="container mt-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h1 class="mb-1"><i class="bi bi-robot me-2"></i>AI Assistant</h1>
+                <p class="text-muted mb-0">
+                    Wklej link do strony produktu. Asystent pobierze treść, przekaże ją do Gemini i przygotuje komponent do dodania do magazynu.
+                </p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">URL produktu</label>
+                            <div class="input-group">
+                                <input class="form-control" placeholder="https://example.com/product/123" @bind="productUrl" @bind:event="oninput" />
+                                <button class="btn btn-primary" @onclick="ProcessLink" disabled="@isProcessing">
+                                @if (isProcessing)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span class="ms-2">Przetwarzanie...</span>
+                                }
+                                else
+                                {
+                                    <span>
+                                        <span class="bi bi-play-fill me-1"></span>
+                                        Przetwórz (Gemini)
+                                    </span>
+                                }
+                            </button>
+                        </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Gemini API Key</label>
+                            <div class="input-group">
+                                <input class="form-control" type="password" placeholder="AIza..." @bind="apiKey" @bind:event="oninput" />
+                                <button class="btn btn-outline-secondary" @onclick="SaveApiKey" disabled="@isProcessing">
+                                    <span class="bi bi-save me-1"></span>Zapisz w przeglądarce
+                                </button>
+                            </div>
+                            <small class="text-muted">Klucz jest zapisywany wyłącznie w pamięci Twojej przeglądarki.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Wynik analizy</label>
+                            <div class="form-control" style="min-height: 220px; white-space: pre-wrap; overflow-y: auto;">
+                                @aiAnalysisResult
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <div style="width: 200px;">
+                                <label class="form-label fw-semibold mb-1">Początkowa ilość</label>
+                                <input class="form-control" type="number" min="0" @bind="initialQuantity" />
+                            </div>
+                            <button class="btn btn-success" @onclick="AddToInventory" disabled="@(!CanAddToInventory)">
+                                <span class="bi bi-plus-circle me-1"></span>Dodaj do magazynu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-0">Podgląd komponentu</h5>
+                                <small class="text-muted">Dane wykryte przez Gemini</small>
+                            </div>
+                            @if (isProcessing)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            }
+                        </div>
+
+                        @if (parsedComponent is not null)
+                        {
+                            <div class="mb-3 text-center">
+                                <img src="@parsedComponent.ImageDataUrl" alt="Podgląd komponentu" class="img-fluid rounded border" style="max-height: 220px; object-fit: contain;" />
+                            </div>
+
+                            <dl class="row mb-0">
+                                <dt class="col-5">Nazwa</dt>
+                                <dd class="col-7">@parsedComponent.Name</dd>
+
+                                <dt class="col-5">Producent</dt>
+                                <dd class="col-7">@parsedComponent.Manufacturer</dd>
+
+                                <dt class="col-5">Kategoria</dt>
+                                <dd class="col-7">@parsedComponent.CategoryName</dd>
+
+                                <dt class="col-5">Opis</dt>
+                                <dd class="col-7">@parsedComponent.ShortDescription</dd>
+                            </dl>
+                        }
+                        else
+                        {
+                            <div class="text-muted">
+                                Brak danych do wyświetlenia. Wklej link i uruchom analizę, aby zobaczyć wynik.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private const string ApiKeyStorageKey = "electrodepot.aiassistant.gemini";
+    private readonly byte[] _defaultImageBytes = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+k7f8AAAAASUVORK5CYII=");
+
+    private string productUrl = string.Empty;
+    private string apiKey = string.Empty;
+    private string aiAnalysisResult = "Wklej link do produktu i kliknij \"Przetwórz\".";
+    private bool isProcessing;
+    private int initialQuantity = 1;
+    private ParsedComponent? parsedComponent;
+
+    private bool CanAddToInventory => !isProcessing && parsedComponent is not null && initialQuantity >= 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadApiKey();
+    }
+
+    private async Task LoadApiKey()
+    {
+        try
+        {
+            apiKey = await JS.InvokeAsync<string?>("localStorage.getItem", ApiKeyStorageKey) ?? string.Empty;
+        }
+        catch
+        {
+            // ignore storage read issues
+        }
+    }
+
+    private async Task SaveApiKey()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", ApiKeyStorageKey, apiKey ?? string.Empty);
+            aiAnalysisResult = "Klucz API zapisany w przeglądarce.";
+        }
+        catch (Exception ex)
+        {
+            aiAnalysisResult = $"Nie udało się zapisać klucza API: {ex.Message}";
+        }
+    }
+
+    private async Task ProcessLink()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(productUrl) || string.IsNullOrWhiteSpace(apiKey))
+        {
+            aiAnalysisResult = "Podaj URL produktu oraz klucz API Gemini.";
+            return;
+        }
+
+        isProcessing = true;
+        aiAnalysisResult = "Pobieranie zawartości strony...";
+        parsedComponent = null;
+
+        try
+        {
+            var html = await ApiService.FetchProductHtmlAsync(productUrl);
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                aiAnalysisResult = "Nie udało się pobrać zawartości strony (sprawdź CORS/URL).";
+                return;
+            }
+
+            var categories = await ApiService.GetCategoriesAsync();
+            var existingCategories = string.Join(", ", categories.Select(c => c.Name));
+            var trimmedHtml = html.Length > 50000 ? html[..50000] : html;
+            var prompt = $"Jesteś asystentem AI. Poniżej znajduje się kod HTML/tekst strony produktu elektronicznego. Zidentyfikuj i wyciągnij: Nazwę (Name), Krótki opis (ShortDescription), Producenta (Manufacturer), kategorię (CategoryName) oraz główny obrazek produktu (ImageUrl - bezwzględny adres URL, musi zaczynać się od http. BEZWZGLĘDNY ZAKAZ: nie wybieraj logo sklepu, banerów reklamowych ani nawigacji po stronie. Szukaj zdjęcia stricte tego konkretnego produktu, najlepiej znajdującego się w meta og:image, twitter:image lub w głównym slajderze na stronie). Istniejące kategorie to: {existingCategories}. Zwróć jedną z nich, lub jeśli żadna nie pasuje, zaproponuj nową, krótką nazwę kategorii. Zwróć TYLKO czysty obiekt JSON bez formatowania markdown. Właściwości JSON: Name, ShortDescription, Manufacturer, CategoryName, ImageUrl. Tekst strony: {trimmedHtml}";
+
+            aiAnalysisResult = "Przetwarzanie z Gemini...";
+            var geminiPayload = await RequestGemini(prompt);
+            if (string.IsNullOrWhiteSpace(geminiPayload))
+            {
+                aiAnalysisResult = "Brak odpowiedzi z Gemini.";
+                return;
+            }
+
+            var parsed = ParseGeminiPayload(geminiPayload);
+            if (parsed is null)
+            {
+                aiAnalysisResult = "Nie udało się odczytać danych wygenerowanych przez Gemini.";
+                return;
+            }
+
+            var targetCategory = categories.FirstOrDefault(c => c.Name.Equals(parsed.CategoryName, StringComparison.OrdinalIgnoreCase));
+            if (targetCategory is null)
+            {
+                aiAnalysisResult = $"Tworzenie nowej kategorii: {parsed.CategoryName}...";
+                targetCategory = await ApiService.CreateCategoryAsync(new CreateCategoryDTO(parsed.CategoryName, "Kategoria wygenerowana przez AI", _defaultImageBytes));
+                if (targetCategory is null)
+                {
+                    aiAnalysisResult = "Nie udało się utworzyć kategorii.";
+                    return;
+                }
+
+                categories = await ApiService.GetCategoriesAsync();
+            }
+
+            var normalizedImageUrl = BuildAbsoluteUrl(parsed.ImageUrl);
+            var imageBytes = await ResolveImageBytes(normalizedImageUrl);
+            var components = await ApiService.GetComponentsAsync();
+
+            var existingComponent = components.FirstOrDefault(c =>
+                string.Equals(c.Name, parsed.Name, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Manufacturer, parsed.Manufacturer, StringComparison.OrdinalIgnoreCase));
+
+            if (existingComponent is not null)
+            {
+                aiAnalysisResult = $"Produkt \"{existingComponent.Name}\" od producenta \"{existingComponent.Manufacturer}\" już istnieje. Zaktualizuj ilość w magazynie, jeśli potrzebne.";
+                parsedComponent = null;
+                return;
+            }
+
+            parsedComponent = new ParsedComponent
+            {
+                Name = parsed.Name,
+                Manufacturer = parsed.Manufacturer,
+                ShortDescription = parsed.ShortDescription,
+                LongDescription = parsed.ShortDescription,
+                CategoryId = targetCategory.ID,
+                CategoryName = targetCategory.Name,
+                ImageBytes = imageBytes
+            };
+
+            aiAnalysisResult = $"Wykryty komponent: {parsedComponent.Name}\nProducent: {parsedComponent.Manufacturer}\nKategoria: {parsedComponent.CategoryName}\nOpis: {parsedComponent.ShortDescription}\n\nNaciśnij \"Dodaj do magazynu\", aby zapisać.";
+        }
+        catch (Exception ex)
+        {
+            aiAnalysisResult = $"Błąd: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task<string?> RequestGemini(string prompt)
+    {
+        var body = new
+        {
+            contents = new[]
+            {
+                new
+                {
+                    parts = new[] { new { text = prompt } }
+                }
+            }
+        };
+
+        using var client = new HttpClient();
+        var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        var response = await client.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key={apiKey}", content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            aiAnalysisResult = $"Błąd Gemini: {response.StatusCode}";
+            return null;
+        }
+
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    private ParsedGeminiResult? ParseGeminiPayload(string payload)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            var aiText = document.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString() ?? string.Empty;
+
+            var cleanJson = aiText.Trim();
+            if (cleanJson.StartsWith("```json"))
+            {
+                cleanJson = cleanJson[7..];
+            }
+            if (cleanJson.EndsWith("```"))
+            {
+                cleanJson = cleanJson[..^3];
+            }
+
+            using var parsed = JsonDocument.Parse(cleanJson);
+            var root = parsed.RootElement;
+
+            return new ParsedGeminiResult(
+                root.TryGetProperty("Name", out var nameEl) ? nameEl.GetString() ?? "Nieznany" : "Nieznany",
+                root.TryGetProperty("ShortDescription", out var descEl) ? descEl.GetString() ?? string.Empty : string.Empty,
+                root.TryGetProperty("Manufacturer", out var manEl) ? manEl.GetString() ?? "Nieznany" : "Nieznany",
+                root.TryGetProperty("CategoryName", out var catEl) ? catEl.GetString() ?? "Inne" : "Inne",
+                root.TryGetProperty("ImageUrl", out var imgEl) ? imgEl.GetString() ?? string.Empty : string.Empty
+            );
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string BuildAbsoluteUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return string.Empty;
+        }
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absolute))
+        {
+            return absolute.ToString();
+        }
+
+        if (Uri.TryCreate(productUrl, UriKind.Absolute, out var baseUri))
+        {
+            return new Uri(baseUri, url).ToString();
+        }
+
+        return url;
+    }
+
+    private async Task<byte[]> ResolveImageBytes(string? imageUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            try
+            {
+                var bytes = await ApiService.FetchImageBytesAsync(imageUrl);
+                if (bytes is { Length: > 0 })
+                {
+                    return bytes;
+                }
+            }
+            catch
+            {
+                // fall back to default
+            }
+        }
+
+        return _defaultImageBytes;
+    }
+
+    private async Task AddToInventory()
+    {
+        if (parsedComponent is null)
+        {
+            aiAnalysisResult = "Najpierw uruchom analizę i przygotuj komponent.";
+            return;
+        }
+
+        if (!AuthService.IsAuthenticated || AuthService.CurrentUser is null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        isProcessing = true;
+        aiAnalysisResult = "Zapisywanie w magazynie...";
+
+        try
+        {
+            var component = await ApiService.CreateComponentAsync(new CreateComponentDTO(
+                CategoryID: parsedComponent.CategoryId,
+                Name: parsedComponent.Name,
+                Manufacturer: parsedComponent.Manufacturer,
+                DatasheetLink: string.Empty,
+                ShortDescription: parsedComponent.ShortDescription,
+                LongDescription: parsedComponent.LongDescription,
+                Image: parsedComponent.ImageBytes));
+
+            if (component is null)
+            {
+                aiAnalysisResult = "Nie udało się utworzyć komponentu.";
+                return;
+            }
+
+            var owns = await ApiService.CreateOwnsComponentAsync(new CreateOwnsComponentDTO(
+                UserID: AuthService.CurrentUser.ID,
+                ComponentID: component.ID,
+                Quantity: initialQuantity));
+
+            if (owns is null)
+            {
+                aiAnalysisResult = "Nie udało się dodać komponentu do magazynu.";
+                return;
+            }
+
+            aiAnalysisResult = $"Dodano do magazynu: {parsedComponent.Name} (ilość {initialQuantity}).";
+            parsedComponent = null;
+            productUrl = string.Empty;
+            initialQuantity = 1;
+        }
+        catch (Exception ex)
+        {
+            aiAnalysisResult = $"Błąd podczas zapisu: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private record ParsedGeminiResult(string Name, string ShortDescription, string Manufacturer, string CategoryName, string ImageUrl);
+
+    private class ParsedComponent
+    {
+        public string Name { get; init; } = string.Empty;
+        public string Manufacturer { get; init; } = string.Empty;
+        public string ShortDescription { get; init; } = string.Empty;
+        public string LongDescription { get; init; } = string.Empty;
+        public int CategoryId { get; init; }
+        public string CategoryName { get; init; } = string.Empty;
+        public byte[] ImageBytes { get; init; } = Array.Empty<byte>();
+        public string ImageDataUrl => $"data:image/png;base64,{Convert.ToBase64String(ImageBytes)}";
+    }
+}

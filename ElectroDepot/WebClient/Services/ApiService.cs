@@ -73,6 +73,16 @@ namespace WebClient.Services
             return null;
         }
 
+        public async Task<OwnsComponentDTO?> CreateOwnsComponentAsync(CreateOwnsComponentDTO ownsComponent)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/ElectroDepot/OwnsComponents/Create", ownsComponent);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<OwnsComponentDTO>();
+            }
+            return null;
+        }
+
         public async Task<bool> UpdateComponentAsync(int id, UpdateComponentDTO component)
         {
             var response = await _httpClient.PutAsJsonAsync($"/ElectroDepot/Components/Update/{id}", component);
@@ -176,11 +186,48 @@ namespace WebClient.Services
             return await _httpClient.GetFromJsonAsync<List<CategoryDTO>>("/ElectroDepot/Categories/GetAll") ?? new List<CategoryDTO>();
         }
 
+        public async Task<CategoryDTO?> CreateCategoryAsync(CreateCategoryDTO category)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/ElectroDepot/Categories/Create", category);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<CategoryDTO>();
+            }
+            return null;
+        }
+
         // OwnsComponent API methods
         public async Task<List<OwnsComponentDTO>> GetOwnedComponentsForUserAsync(int userId)
         {
             return await _httpClient.GetFromJsonAsync<List<OwnsComponentDTO>>($"/ElectroDepot/OwnsComponents/GetAllOwnComponentFromUser/{userId}")
                 ?? new List<OwnsComponentDTO>();
         }
+
+        // AI assistant helpers
+        public async Task<string?> FetchProductHtmlAsync(string url)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/ElectroDepot/AIAssistant/FetchHtml", new FetchRequest(url));
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var payload = await response.Content.ReadFromJsonAsync<FetchHtmlResponse>();
+            return payload?.Content;
+        }
+
+        public async Task<byte[]?> FetchImageBytesAsync(string url)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/ElectroDepot/AIAssistant/FetchImage", new FetchRequest(url));
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+
+        private record FetchRequest(string Url);
+        private record FetchHtmlResponse(string Content);
     }
 }

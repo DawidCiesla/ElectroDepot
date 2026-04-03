@@ -5,6 +5,7 @@ using Server.Context;
 using Server.Services;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Http;
 
 namespace Server
 {
@@ -40,6 +41,7 @@ namespace Server
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
             });
+            builder.Services.AddHttpClient();
             // Swagger/OpenAPI configuration
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
